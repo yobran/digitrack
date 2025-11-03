@@ -94,6 +94,55 @@ exports.Prisma.UserScalarFieldEnum = {
   name: 'name',
   email: 'email',
   password: 'password',
+  role: 'role',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.SchoolScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  code: 'code',
+  location: 'location',
+  county: 'county',
+  principal: 'principal',
+  phone: 'phone',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.SchoolAssignmentScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  schoolId: 'schoolId'
+};
+
+exports.Prisma.DeviceScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  addedById: 'addedById',
+  deviceType: 'deviceType',
+  serialNumber: 'serialNumber',
+  status: 'status',
+  notes: 'notes',
+  photo: 'photo',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.VisitScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  schoolId: 'schoolId',
+  visitDate: 'visitDate',
+  gpsLatitude: 'gpsLatitude',
+  gpsLongitude: 'gpsLongitude',
+  notes: 'notes',
+  photo: 'photo',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.VisitPhotoScalarFieldEnum = {
+  id: 'id',
+  visitId: 'visitId',
+  photoUrl: 'photoUrl',
   createdAt: 'createdAt'
 };
 
@@ -102,9 +151,19 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
+};
+
 
 exports.Prisma.ModelName = {
-  User: 'User'
+  User: 'User',
+  School: 'School',
+  SchoolAssignment: 'SchoolAssignment',
+  Device: 'Device',
+  Visit: 'Visit',
+  VisitPhoto: 'VisitPhoto'
 };
 /**
  * Create the Client
@@ -135,7 +194,7 @@ const config = {
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": "../../.env",
+    "rootEnvPath": null,
     "schemaEnvPath": "../../.env"
   },
   "relativePath": "../../prisma",
@@ -145,7 +204,6 @@ const config = {
     "db"
   ],
   "activeProvider": "sqlite",
-  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -154,13 +212,13 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/prisma\"\n}\n\ndatasource db {\n  provider = \"sqlite\"\n  url      = \"file:./dev.db\"\n}\n\nmodel User {\n  id        Int      @id @default(autoincrement())\n  name      String\n  email     String   @unique\n  password  String\n  createdAt DateTime @default(now())\n}\n",
-  "inlineSchemaHash": "3821923d114afeaaa7432ed04dea57028a737dd18324a383739463dca02f43fb",
+  "inlineSchema": "// server/prisma/schema.prisma\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/prisma\"\n}\n\ndatasource db {\n  provider = \"sqlite\"\n  url      = \"file:./dev.db\"\n}\n\nmodel User {\n  id        Int      @id @default(autoincrement())\n  name      String\n  email     String   @unique\n  password  String\n  role      String   @default(\"intern\") // intern, supervisor\n  createdAt DateTime @default(now())\n\n  // Relations\n  assignedSchools SchoolAssignment[]\n  visits          Visit[]\n  devices         Device[]\n}\n\nmodel School {\n  id        Int      @id @default(autoincrement())\n  name      String\n  code      String   @unique // School code like \"SCH001\"\n  location  String\n  county    String\n  principal String?\n  phone     String?\n  createdAt DateTime @default(now())\n\n  // Relations\n  assignments SchoolAssignment[]\n  devices     Device[]\n  visits      Visit[]\n}\n\nmodel SchoolAssignment {\n  id       Int    @id @default(autoincrement())\n  userId   Int\n  schoolId Int\n  user     User   @relation(fields: [userId], references: [id])\n  school   School @relation(fields: [schoolId], references: [id])\n\n  @@unique([userId, schoolId])\n}\n\nmodel Device {\n  id           Int      @id @default(autoincrement())\n  schoolId     Int\n  addedById    Int\n  deviceType   String // \"Laptop\", \"Tablet\", \"Projector\"\n  serialNumber String   @unique\n  status       String   @default(\"working\") // working, broken, stolen\n  notes        String?\n  photo        String? // URL to uploaded photo\n  createdAt    DateTime @default(now())\n\n  school  School @relation(fields: [schoolId], references: [id])\n  addedBy User   @relation(fields: [addedById], references: [id])\n}\n\nmodel Visit {\n  id           Int      @id @default(autoincrement())\n  userId       Int\n  schoolId     Int\n  visitDate    DateTime @default(now())\n  gpsLatitude  Float?\n  gpsLongitude Float?\n  notes        String?\n  photo        String? // Single main photo URL\n  createdAt    DateTime @default(now())\n\n  user        User         @relation(fields: [userId], references: [id])\n  school      School       @relation(fields: [schoolId], references: [id])\n  visitPhotos VisitPhoto[] // ADDED THIS RELATION\n}\n\nmodel VisitPhoto {\n  id        Int      @id @default(autoincrement())\n  visitId   Int\n  photoUrl  String\n  createdAt DateTime @default(now())\n\n  visit Visit @relation(fields: [visitId], references: [id])\n}\n",
+  "inlineSchemaHash": "a85bca771d86127a6c072f225261c3f955b581733d4aae10071328c2a559fdd6",
   "copyEngine": true
 }
 config.dirname = '/'
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"password\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"password\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"role\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"assignedSchools\",\"kind\":\"object\",\"type\":\"SchoolAssignment\",\"relationName\":\"SchoolAssignmentToUser\"},{\"name\":\"visits\",\"kind\":\"object\",\"type\":\"Visit\",\"relationName\":\"UserToVisit\"},{\"name\":\"devices\",\"kind\":\"object\",\"type\":\"Device\",\"relationName\":\"DeviceToUser\"}],\"dbName\":null},\"School\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"code\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"location\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"county\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"principal\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"phone\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"assignments\",\"kind\":\"object\",\"type\":\"SchoolAssignment\",\"relationName\":\"SchoolToSchoolAssignment\"},{\"name\":\"devices\",\"kind\":\"object\",\"type\":\"Device\",\"relationName\":\"DeviceToSchool\"},{\"name\":\"visits\",\"kind\":\"object\",\"type\":\"Visit\",\"relationName\":\"SchoolToVisit\"}],\"dbName\":null},\"SchoolAssignment\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"schoolId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"SchoolAssignmentToUser\"},{\"name\":\"school\",\"kind\":\"object\",\"type\":\"School\",\"relationName\":\"SchoolToSchoolAssignment\"}],\"dbName\":null},\"Device\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"schoolId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"addedById\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"deviceType\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"serialNumber\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"notes\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"photo\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"school\",\"kind\":\"object\",\"type\":\"School\",\"relationName\":\"DeviceToSchool\"},{\"name\":\"addedBy\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"DeviceToUser\"}],\"dbName\":null},\"Visit\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"schoolId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"visitDate\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"gpsLatitude\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"gpsLongitude\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"notes\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"photo\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"UserToVisit\"},{\"name\":\"school\",\"kind\":\"object\",\"type\":\"School\",\"relationName\":\"SchoolToVisit\"},{\"name\":\"visitPhotos\",\"kind\":\"object\",\"type\":\"VisitPhoto\",\"relationName\":\"VisitToVisitPhoto\"}],\"dbName\":null},\"VisitPhoto\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"visitId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"photoUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"visit\",\"kind\":\"object\",\"type\":\"Visit\",\"relationName\":\"VisitToVisitPhoto\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 defineDmmfProperty(exports.Prisma, config.runtimeDataModel)
 config.engineWasm = {
   getRuntime: async () => require('./query_engine_bg.js'),

@@ -1,6 +1,14 @@
 const { PrismaClient } = require('../prisma/client');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const prisma = new PrismaClient();
+
+const JWT_SECRET = process.env.JWT_SECRET || 'digitrack_super_secret_2024';
+
+// Generate JWT token
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
+};
 
 exports.registerUser = async (req, res) => {
   try {
@@ -18,7 +26,14 @@ exports.registerUser = async (req, res) => {
       data: { name, email, password: hashedPassword },
     });
 
-    res.status(201).json({ message: 'User registered successfully', user });
+    // Generate token
+    const token = generateToken(user.id);
+
+    res.status(201).json({ 
+      message: 'User registered successfully', 
+      token,
+      user: { id: user.id, name: user.name, email: user.email }
+    });
   } catch (err) {
     console.error('Registration Error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -37,7 +52,14 @@ exports.loginUser = async (req, res) => {
     if (!isMatch)
       return res.status(401).json({ error: 'Invalid credentials' });
 
-    res.status(200).json({ message: 'Login successful', user });
+    // Generate token
+    const token = generateToken(user.id);
+
+    res.status(200).json({ 
+      message: 'Login successful', 
+      token,
+      user: { id: user.id, name: user.name, email: user.email }
+    });
   } catch (err) {
     console.error('Login Error:', err);
     res.status(500).json({ error: 'Internal server error' });

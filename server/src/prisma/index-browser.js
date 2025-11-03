@@ -122,6 +122,55 @@ exports.Prisma.UserScalarFieldEnum = {
   name: 'name',
   email: 'email',
   password: 'password',
+  role: 'role',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.SchoolScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  code: 'code',
+  location: 'location',
+  county: 'county',
+  principal: 'principal',
+  phone: 'phone',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.SchoolAssignmentScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  schoolId: 'schoolId'
+};
+
+exports.Prisma.DeviceScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  addedById: 'addedById',
+  deviceType: 'deviceType',
+  serialNumber: 'serialNumber',
+  status: 'status',
+  notes: 'notes',
+  photo: 'photo',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.VisitScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  schoolId: 'schoolId',
+  visitDate: 'visitDate',
+  gpsLatitude: 'gpsLatitude',
+  gpsLongitude: 'gpsLongitude',
+  notes: 'notes',
+  photo: 'photo',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.VisitPhotoScalarFieldEnum = {
+  id: 'id',
+  visitId: 'visitId',
+  photoUrl: 'photoUrl',
   createdAt: 'createdAt'
 };
 
@@ -130,9 +179,19 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
+};
+
 
 exports.Prisma.ModelName = {
-  User: 'User'
+  User: 'User',
+  School: 'School',
+  SchoolAssignment: 'SchoolAssignment',
+  Device: 'Device',
+  Visit: 'Visit',
+  VisitPhoto: 'VisitPhoto'
 };
 
 /**

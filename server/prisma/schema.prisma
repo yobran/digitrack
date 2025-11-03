@@ -1,3 +1,4 @@
+// server/prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
   output   = "../src/prisma"
@@ -13,6 +14,77 @@ model User {
   name      String
   email     String   @unique
   password  String
+  role      String   @default("intern") // intern, supervisor
   createdAt DateTime @default(now())
+  
+  // Relations
+  assignedSchools SchoolAssignment[]
+  visits          Visit[]
+  devices         Device[]
 }
 
+model School {
+  id          Int      @id @default(autoincrement())
+  name        String
+  code        String   @unique // School code like "SCH001"
+  location    String
+  county      String
+  principal   String?
+  phone       String?
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  assignments SchoolAssignment[]
+  devices     Device[]
+  visits      Visit[]
+}
+
+model SchoolAssignment {
+  id       Int    @id @default(autoincrement())
+  userId   Int
+  schoolId Int
+  user     User   @relation(fields: [userId], references: [id])
+  school   School @relation(fields: [schoolId], references: [id])
+  
+  @@unique([userId, schoolId])
+}
+
+model Device {
+  id          Int      @id @default(autoincrement())
+  schoolId    Int
+  addedById   Int
+  deviceType  String   // "Laptop", "Tablet", "Projector"
+  serialNumber String  @unique
+  status      String   @default("working") // working, broken, stolen
+  notes       String?
+  photo       String?  // URL to uploaded photo
+  createdAt   DateTime @default(now())
+  
+  school      School   @relation(fields: [schoolId], references: [id])
+  addedBy     User     @relation(fields: [addedById], references: [id])
+}
+
+model Visit {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  schoolId       Int
+  visitDate      DateTime @default(now())
+  gpsLatitude    Float?
+  gpsLongitude   Float?
+  notes          String?
+  photo          String?  // Single main photo URL
+  createdAt      DateTime @default(now())
+  
+  user           User     @relation(fields: [userId], references: [id])
+  school         School   @relation(fields: [schoolId], references: [id])
+  visitPhotos    VisitPhoto[]  // ADDED THIS RELATION
+}
+
+model VisitPhoto {
+  id        Int      @id @default(autoincrement())
+  visitId   Int
+  photoUrl  String
+  createdAt DateTime @default(now())
+  
+  visit     Visit    @relation(fields: [visitId], references: [id])
+}

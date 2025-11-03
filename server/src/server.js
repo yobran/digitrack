@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes'); // ✅ Import auth routes
+const schoolRoutes = require('./routes/schoolRoutes'); // ✅ Import school routes
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -34,12 +35,16 @@ app.get('/api', (req, res) => {
       auth: '/api/auth/*',
       schools: '/api/schools/*',
       devices: '/api/devices/*',
+      visits: '/api/visits/*'
     },
   });
 });
 
 // ✅ Mount authentication routes
 app.use('/api/auth', authRoutes);
+
+// ✅ Mount school routes
+app.use('/api/schools', schoolRoutes);
 
 // ===== Error & 404 Handlers =====
 app.use((req, res) => {
@@ -69,4 +74,3 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
-

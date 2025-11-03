@@ -1,55 +1,54 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import api from '../services/api';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useState, useContext } from 'react';
+import { authAPI } from '../services/api';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const navigate = useNavigate ? null : null; // keep react-hooks lint quiet if unused here
   const [user, setUser] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('digi_user')) || null;
-    } catch (e) { return null; }
+    } catch (e) { 
+      return null; 
+    }
   });
   const [token, setToken] = useState(() => localStorage.getItem('digi_token') || null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (token) {
-      localStorage.setItem('digi_token', token);
-    } else {
-      localStorage.removeItem('digi_token');
-      localStorage.removeItem('digi_user');
-    }
-  }, [token]);
-
   const login = async (email, password) => {
     setLoading(true);
     try {
-      const res = await api.login({ email, password });
-      setUser(res.user || null);
-      setToken(res.token || null);
-      localStorage.setItem('digi_user', JSON.stringify(res.user || null));
+      const res = await authAPI.login({ email, password });
+      setUser(res.data.user);
+      setToken(res.data.token);
+      localStorage.setItem('digi_user', JSON.stringify(res.data.user));
+      localStorage.setItem('digi_token', res.data.token);
       setLoading(false);
       return { ok: true };
     } catch (err) {
       setLoading(false);
-      return { ok: false, error: err.message || 'Login failed' };
+      return { 
+        ok: false, 
+        error: err.response?.data?.error || 'Login failed' 
+      };
     }
   };
 
   const register = async (payload) => {
     setLoading(true);
     try {
-      const res = await api.register(payload);
-      setUser(res.user || null);
-      setToken(res.token || null);
-      localStorage.setItem('digi_user', JSON.stringify(res.user || null));
+      const res = await authAPI.register(payload);
+      setUser(res.data.user);
+      setToken(res.data.token);
+      localStorage.setItem('digi_user', JSON.stringify(res.data.user));
+      localStorage.setItem('digi_token', res.data.token);
       setLoading(false);
       return { ok: true };
     } catch (err) {
       setLoading(false);
-      return { ok: false, error: err.message || 'Registration failed' };
+      return { 
+        ok: false, 
+        error: err.response?.data?.error || 'Registration failed' 
+      };
     }
   };
 

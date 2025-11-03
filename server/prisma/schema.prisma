@@ -1,167 +1,18 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
   password  String
-  phone     String?
-  role      String   @default("intern") // intern, admin, county_admin
-  countyId  String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  schools       School[]
-  visits        SchoolVisit[]
-  trainings     TeacherTraining[]
-  county        County?  @relation(fields: [countyId], references: [id])
 }
 
-model County {
-  id            String   @id @default(uuid())
-  name          String   @unique
-  code          String   @unique
-  schoolsCount  Int      @default(0)
-  createdAt     DateTime @default(now())
-
-  users         User[]
-  subCounties   SubCounty[]
-}
-
-model SubCounty {
-  id            String   @id @default(uuid())
-  name          String
-  countyId      String
-  schoolsCount  Int      @default(0)
-  createdAt     DateTime @default(now())
-
-  county        County   @relation(fields: [countyId], references: [id])
-  schools       School[]
-}
-
-model School {
-  id                String   @id @default(uuid())
-  name              String
-  code              String   @unique
-  subCountyId       String
-  latitude          Float?
-  longitude         Float?
-  headteacherName   String?
-  headteacherPhone  String?
-  hasElectricity    Boolean  @default(false)
-  hasInternet       Boolean  @default(false)
-  totalStudents     Int      @default(0)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  userId            String
-
-  user              User           @relation(fields: [userId], references: [id])
-  subCounty         SubCounty      @relation(fields: [subCountyId], references: [id])
-  devices           Device[]
-  visits            SchoolVisit[]
-  teachers          Teacher[]
-  issues            Issue[]
-}
-
-model Device {
-  id            String   @id @default(uuid())
-  schoolId      String
-  type          String   // tablet, laptop, projector, router
-  serialNumber  String   @unique
-  brand         String?
-  model         String?
-  purchaseDate  DateTime?
-  status        String   @default("working") // working, needs_repair, stolen, maintenance
-  conditionNotes String?
-  lastChecked   DateTime?
-  photoUrl      String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  school        School   @relation(fields: [schoolId], references: [id])
-  history       DeviceHistory[]
-}
-
-model DeviceHistory {
-  id          String   @id @default(uuid())
-  deviceId    String
-  userId      String?
-  action      String   // checked, repaired, reported_stolen, status_changed
-  notes       String?
-  createdAt   DateTime @default(now())
-
-  device      Device   @relation(fields: [deviceId], references: [id])
-}
-
-model SchoolVisit {
-  id              String   @id @default(uuid())
-  schoolId        String
-  userId          String
-  visitDate       DateTime
-  devicesChecked  Int      @default(0)
-  issuesFound     String?
-  actionsTaken    String?
-  photos          String?  // JSON array of photo URLs
-  gpsLatitude     Float?
-  gpsLongitude    Float?
-  durationMinutes Int?
-  createdAt       DateTime @default(now())
-
-  school          School   @relation(fields: [schoolId], references: [id])
-  user            User     @relation(fields: [userId], references: [id])
-}
-
-model Teacher {
-  id          String   @id @default(uuid())
-  schoolId    String
-  name        String
-  phone       String?
-  email       String?
-  tscNumber   String?  // Teacher Service Commission number
-  subjects    String?
-  gradeLevels String?
-  createdAt   DateTime @default(now())
-
-  school      School   @relation(fields: [schoolId], references: [id])
-  trainings   TeacherTraining[]
-}
-
-model TeacherTraining {
-  id            String   @id @default(uuid())
-  teacherId     String
-  userId        String
-  moduleName    String   // Basic Computer, Device Startup, Content Access, etc.
-  trainingDate  DateTime
-  skillLevel    String   // beginner, intermediate, advanced
-  certificateUrl String?
-  notes         String?
-  createdAt     DateTime @default(now())
-
-  teacher       Teacher  @relation(fields: [teacherId], references: [id])
-  trainer       User     @relation(fields: [userId], references: [id])
-}
-
-model Issue {
-  id            String   @id @default(uuid())
-  schoolId      String
-  teacherId     String?
-  reportedBy    String?
-  category      String   // device_broken, no_power, internet_down, need_training, content_missing
-  priority      String   @default("medium") // high, medium, low
-  status        String   @default("open") // open, in_progress, resolved, closed
-  description   String
-  resolutionNotes String?
-  resolvedAt    DateTime?
-  assignedTo    String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  school        School   @relation(fields: [schoolId], references: [id])
-}

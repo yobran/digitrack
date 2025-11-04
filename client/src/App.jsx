@@ -6,6 +6,10 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Schools from './pages/Schools';
+import SchoolDetails from './pages/SchoolDetails';
+import LogVisit from './pages/LogVisit';
+import Devices from './pages/Devices';
+import Reports from './pages/Reports';
 
 function App() {
   return (
@@ -34,6 +38,38 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/schools/:id" 
+              element={
+                <ProtectedRoute>
+                  <SchoolDetails />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/log-visit" 
+              element={
+                <ProtectedRoute>
+                  <LogVisit />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+  path="/devices" 
+  element={
+    <ProtectedRoute>
+      <Devices />
+    </ProtectedRoute>
+  } 
+/>
+<Route 
+  path="/reports" 
+  element={
+    <ProtectedRoute>
+      <Reports />
+    </ProtectedRoute>
+  } 
+/>
             
             {/* Default redirect */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

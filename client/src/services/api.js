@@ -26,9 +26,20 @@ export const documentAPI = {
   list: () => api.get('/documents'),
   download: (id) => api.get(`/documents/download/${id}`),
 };
+
 export const schoolAPI = {
   getMySchools: () => api.get('/schools/my-schools'),
   getSchool: (id) => api.get(`/schools/${id}`),
+};
+
+export const visitAPI = {
+  logVisit: (visitData) => api.post('/visits/log', visitData),
+  getSchoolVisits: (schoolId) => api.get(`/visits/school/${schoolId}`),
+};
+export const deviceAPI = {
+  addDevice: (deviceData) => api.post('/devices/add', deviceData),
+  updateDeviceStatus: (deviceId, status) => api.patch(`/devices/${deviceId}/status`, { status }),
+  getSchoolDevices: (schoolId) => api.get(`/devices/school/${schoolId}`),
 };
 
 export default api;

@@ -4,7 +4,9 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes'); // ✅ Import auth routes
 const schoolRoutes = require('./routes/schoolRoutes'); // ✅ Import school routes
-
+const visitRoutes = require('./routes/visitRoutes'); // ✅ Import visit routes
+const deviceRoutes = require('./routes/deviceRoutes');
+const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -12,6 +14,8 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ===== Routes =====
 
@@ -34,8 +38,8 @@ app.get('/api', (req, res) => {
       health: '/api/health',
       auth: '/api/auth/*',
       schools: '/api/schools/*',
-      devices: '/api/devices/*',
-      visits: '/api/visits/*'
+      visits: '/api/visits/*',
+      devices: '/api/devices/*'
     },
   });
 });
@@ -45,6 +49,11 @@ app.use('/api/auth', authRoutes);
 
 // ✅ Mount school routes
 app.use('/api/schools', schoolRoutes);
+
+// ✅ Mount visit routes
+app.use('/api/visits', visitRoutes);
+// ✅ Mount device routes
+app.use('/api/devices', require('./routes/deviceRoutes'));
 
 // ===== Error & 404 Handlers =====
 app.use((req, res) => {
@@ -72,6 +81,7 @@ app.listen(PORT, () => {
   console.log('✅ Health: http://localhost:' + PORT + '/api/health');
   console.log('=================================');
 });
+
 // Temporary debug route - add this after auth routes
 app.get('/api/debug/me', async (req, res) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -94,4 +104,5 @@ app.get('/api/debug/me', async (req, res) => {
     res.status(401).json({ error: 'Invalid token' });
   }
 });
+
 module.exports = app;

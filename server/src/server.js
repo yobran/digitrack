@@ -72,5 +72,26 @@ app.listen(PORT, () => {
   console.log('✅ Health: http://localhost:' + PORT + '/api/health');
   console.log('=================================');
 });
-
+// Temporary debug route - add this after auth routes
+app.get('/api/debug/me', async (req, res) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No token' });
+  
+  try {
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    const { PrismaClient } = require('./prisma/client');
+    const prisma = new PrismaClient();
+    
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, name: true, email: true }
+    });
+    
+    res.json({ user });
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
 module.exports = app;

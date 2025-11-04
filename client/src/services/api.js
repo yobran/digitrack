@@ -26,5 +26,9 @@ export const documentAPI = {
   list: () => api.get('/documents'),
   download: (id) => api.get(`/documents/download/${id}`),
 };
+export const schoolAPI = {
+  getMySchools: () => api.get('/schools/my-schools'),
+  getSchool: (id) => api.get(`/schools/${id}`),
+};
 
 export default api;

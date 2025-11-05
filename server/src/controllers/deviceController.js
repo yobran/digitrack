@@ -1,6 +1,6 @@
-const { PrismaClient } = require('../prisma/client');
+// CORRECT - use the installed Prisma client
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-
 // Add a new device to a school
 exports.addDevice = async (req, res) => {
   try {

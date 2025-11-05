@@ -1,4 +1,4 @@
-const { PrismaClient } = require('../prisma/client');
+const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = new PrismaClient();
@@ -12,7 +12,7 @@ const generateToken = (userId) => {
 
 exports.registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role = 'intern' } = req.body;
 
     if (!name || !email || !password)
       return res.status(400).json({ error: 'All fields are required' });
@@ -23,7 +23,7 @@ exports.registerUser = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { name, email, password: hashedPassword },
+      data: { name, email, password: hashedPassword, role },
     });
 
     // Generate token
@@ -32,7 +32,12 @@ exports.registerUser = async (req, res) => {
     res.status(201).json({ 
       message: 'User registered successfully', 
       token,
-      user: { id: user.id, name: user.name, email: user.email }
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role 
+      }
     });
   } catch (err) {
     console.error('Registration Error:', err);
@@ -58,7 +63,12 @@ exports.loginUser = async (req, res) => {
     res.status(200).json({ 
       message: 'Login successful', 
       token,
-      user: { id: user.id, name: user.name, email: user.email }
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role 
+      }
     });
   } catch (err) {
     console.error('Login Error:', err);

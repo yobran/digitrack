@@ -10,6 +10,7 @@ import SchoolDetails from './pages/SchoolDetails';
 import LogVisit from './pages/LogVisit';
 import Devices from './pages/Devices';
 import Reports from './pages/Reports';
+import AdminDashboard from './pages/AdminDashboard'; // ADD THIS IMPORT
 
 function App() {
   return (
@@ -55,21 +56,31 @@ function App() {
               } 
             />
             <Route 
-  path="/devices" 
-  element={
-    <ProtectedRoute>
-      <Devices />
-    </ProtectedRoute>
-  } 
-/>
-<Route 
-  path="/reports" 
-  element={
-    <ProtectedRoute>
-      <Reports />
-    </ProtectedRoute>
-  } 
-/>
+              path="/devices" 
+              element={
+                <ProtectedRoute>
+                  <Devices />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/reports" 
+              element={
+                <ProtectedRoute>
+                  <Reports />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Admin Dashboard Route - UNCOMMENTED */}
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
             
             {/* Default redirect */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

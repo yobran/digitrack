@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { schoolAPI, visitAPI, deviceAPI } from '../services/api';
+import { schoolAPI, reportAPI } from '../services/api';
 import { generatePDFReport, generatePDFFromHTML } from '../services/pdfGenerator';
 
 export default function Reports() {
@@ -30,166 +30,96 @@ export default function Reports() {
   };
 
   const generateReport = async () => {
-  setLoading(true);
-  setError('');
+    setLoading(true);
+    setError('');
 
-  try {
-    // Get the selected school
-    const selectedSchoolData = selectedSchool === 'all' 
-      ? null 
-      : schools.find(school => school.id === parseInt(selectedSchool));
+    try {
+      // ✅ USE THE REAL API INSTEAD OF HARDCODED DATA
+      const response = await reportAPI.generate({
+        schoolId: selectedSchool,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate
+      });
 
-    // Generate report based on selected school
-    const report = {
-      summary: {
-        totalSchools: selectedSchool === 'all' ? schools.length : 1,
-        totalVisits: selectedSchool === 'all' ? 12 : 4, // These would come from real API later
-        totalDevices: selectedSchool === 'all' ? 8 : selectedSchoolData?.devices?.length || 0,
-        workingDevices: selectedSchool === 'all' ? 6 : selectedSchoolData?.devices?.filter(d => d.status === 'working').length || 0,
-        brokenDevices: selectedSchool === 'all' ? 1 : selectedSchoolData?.devices?.filter(d => d.status === 'broken').length || 0,
-        missingDevices: selectedSchool === 'all' ? 1 : selectedSchoolData?.devices?.filter(d => d.status === 'missing').length || 0
-      },
-      visits: [
-        {
-          id: 1,
-          schoolName: selectedSchool === 'all' ? 'Nairobi Primary School' : selectedSchoolData?.name,
-          visitDate: '2025-11-04',
-          notes: selectedSchool === 'all' ? 'Regular monitoring visit. All devices working properly.' : `Visit to ${selectedSchoolData?.name} - All devices checked.`,
-          gpsLocation: '-1.2921, 36.8219'
-        },
-        {
-          id: 2,
-          schoolName: selectedSchool === 'all' ? 'Nairobi Primary School' : selectedSchoolData?.name,
-          visitDate: '2025-10-28',
-          notes: selectedSchool === 'all' ? 'Tablet screen cracked. Needs replacement.' : `Visit to ${selectedSchoolData?.name} - Device maintenance required.`,
-          gpsLocation: '-1.2921, 36.8219'
-        }
-      ],
-      devices: selectedSchool === 'all' ? [
-        {
-          id: 1,
-          schoolName: 'Nairobi Primary School',
-          deviceType: 'Laptop',
-          serialNumber: 'LP-NB-001',
-          status: 'working',
-          lastUpdated: '2025-11-04'
-        },
-        {
-          id: 2,
-          schoolName: 'Nairobi Primary School',
-          deviceType: 'Tablet',
-          serialNumber: 'TAB-NB-001',
-          status: 'broken',
-          lastUpdated: '2025-10-28'
-        },
-        {
-          id: 3,
-          schoolName: 'Mombasa Secondary School',
-          deviceType: 'Projector',
-          serialNumber: 'PROJ-MSA-001',
-          status: 'working',
-          lastUpdated: '2025-11-03'
-        }
-      ] : [
-        {
-          id: 1,
-          schoolName: selectedSchoolData?.name,
-          deviceType: 'Laptop',
-          serialNumber: 'LP-NB-001',
-          status: 'working',
-          lastUpdated: '2025-11-04'
-        },
-        {
-          id: 2,
-          schoolName: selectedSchoolData?.name,
-          deviceType: 'Tablet', 
-          serialNumber: 'TAB-NB-001',
-          status: 'broken',
-          lastUpdated: '2025-10-28'
-        }
-      ],
-      generatedAt: new Date().toISOString(),
-      generatedBy: user?.name || 'DLP Field Officer'
-    };
+      setReportData(response.data);
+      
+    } catch (err) {
+      setError('Failed to generate report: ' + (err.response?.data?.error || err.message));
+      console.error('Report generation error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    setReportData(report);
-    
-  } catch (err) {
-    setError('Failed to generate report');
-  } finally {
-    setLoading(false);
-  }
-};
-
- const downloadPDF = async () => {
-  try {
-    // Method 1: Generate structured PDF
-    await generatePDFReport(reportData, dateRange, user);
-    
-    // Method 2: Uncomment below to capture HTML content instead
-    // await generatePDFFromHTML('report-content', `DLP-Report-${new Date().toISOString().split('T')[0]}.pdf`);
-    
-  } catch (error) {
-    console.error('PDF generation error:', error);
-    alert('Error generating PDF. Please try again.');
-  }
-};
+  const downloadPDF = async () => {
+    try {
+      // Method 1: Generate structured PDF
+      await generatePDFReport(reportData, dateRange, user);
+      
+      // Method 2: Uncomment below to capture HTML content instead
+      // await generatePDFFromHTML('report-content', `DLP-Report-${new Date().toISOString().split('T')[0]}.pdf`);
+      
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Error generating PDF. Please try again.');
+    }
+  };
 
   const shareReport = async () => {
-  if (!reportData) return;
+    if (!reportData) return;
 
-  try {
-    // Predefined manager emails (you can expand this list)
-    const managers = {
-      'county_supervisor': 'county.supervisor@education.go.ke',
-      'dlp_coordinator': 'dlp.coordinator@education.go.ke', 
-      'head_teacher': 'principal@schools.go.ke',
-      'custom': ''
-    };
+    try {
+      // Predefined manager emails (you can expand this list)
+      const managers = {
+        'county_supervisor': 'county.supervisor@education.go.ke',
+        'dlp_coordinator': 'dlp.coordinator@education.go.ke', 
+        'head_teacher': 'principal@schools.go.ke',
+        'custom': ''
+      };
 
-    // Let user choose manager or enter custom email
-    const managerChoice = prompt(
-      `Choose manager to share with:\n\n` +
-      `1. County Supervisor (${managers.county_supervisor})\n` +
-      `2. DLP Coordinator (${managers.dlp_coordinator})\n` +
-      `3. Head Teacher (${managers.head_teacher})\n` +
-      `4. Custom email\n\n` +
-      `Enter 1, 2, 3, or 4:`, '1'
-    );
+      // Let user choose manager or enter custom email
+      const managerChoice = prompt(
+        `Choose manager to share with:\n\n` +
+        `1. County Supervisor (${managers.county_supervisor})\n` +
+        `2. DLP Coordinator (${managers.dlp_coordinator})\n` +
+        `3. Head Teacher (${managers.head_teacher})\n` +
+        `4. Custom email\n\n` +
+        `Enter 1, 2, 3, or 4:`, '1'
+      );
 
-    let managerEmail = '';
-    
-    switch (managerChoice) {
-      case '1':
-        managerEmail = managers.county_supervisor;
-        break;
-      case '2':
-        managerEmail = managers.dlp_coordinator;
-        break;
-      case '3':
-        managerEmail = managers.head_teacher;
-        break;
-      case '4':
-        managerEmail = prompt('Enter custom email address:');
-        break;
-      default:
-        alert('Invalid choice. Using County Supervisor.');
-        managerEmail = managers.county_supervisor;
-    }
+      let managerEmail = '';
+      
+      switch (managerChoice) {
+        case '1':
+          managerEmail = managers.county_supervisor;
+          break;
+        case '2':
+          managerEmail = managers.dlp_coordinator;
+          break;
+        case '3':
+          managerEmail = managers.head_teacher;
+          break;
+        case '4':
+          managerEmail = prompt('Enter custom email address:');
+          break;
+        default:
+          alert('Invalid choice. Using County Supervisor.');
+          managerEmail = managers.county_supervisor;
+      }
 
-    if (!managerEmail) return;
+      if (!managerEmail) return;
 
-    // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(managerEmail)) {
-      alert('Please enter a valid email address');
-      return;
-    }
+      // Validate email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(managerEmail)) {
+        alert('Please enter a valid email address');
+        return;
+      }
 
-    // Create email content
-    const subject = `DLP Monitoring Report - ${new Date(dateRange.startDate).toLocaleDateString()} to ${new Date(dateRange.endDate).toLocaleDateString()}`;
-    
-    const body = `
+      // Create email content
+      const subject = `DLP Monitoring Report - ${new Date(dateRange.startDate).toLocaleDateString()} to ${new Date(dateRange.endDate).toLocaleDateString()}`;
+      
+      const body = `
 DIGITAL LITERACY PROGRAMME - MONITORING REPORT
 
 REPORT DETAILS:
@@ -222,22 +152,23 @@ ${reportData.devices.slice(0, 5).map(device =>
 ---
 This automated report was generated by DigiTrack DLP Management System.
 For detailed reports and analytics, please login to the system.
-    `.trim();
+      `.trim();
 
-    // Open email client
-    const mailtoLink = `mailto:${managerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoLink;
-    
-    // Success confirmation
-    setTimeout(() => {
-      alert(`✅ Report shared successfully with ${managerEmail}!\n\nYour email client opened with the complete report. Click "Send" to deliver it.`);
-    }, 1000);
+      // Open email client
+      const mailtoLink = `mailto:${managerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = mailtoLink;
+      
+      // Success confirmation
+      setTimeout(() => {
+        alert(`✅ Report shared successfully with ${managerEmail}!\n\nYour email client opened with the complete report. Click "Send" to deliver it.`);
+      }, 1000);
 
-  } catch (error) {
-    console.error('Email sharing error:', error);
-    alert('Error preparing email. Please try again.');
-  }
-};
+    } catch (error) {
+      console.error('Email sharing error:', error);
+      alert('Error preparing email. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -444,9 +375,11 @@ For detailed reports and analytics, please login to the system.
                         <p className="text-sm text-gray-600">{new Date(visit.visitDate).toLocaleDateString()}</p>
                         <p className="text-sm mt-1">{visit.notes}</p>
                       </div>
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                        GPS Verified
-                      </span>
+                      {visit.gpsLocation !== 'Location not recorded' && (
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                          GPS Verified
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}

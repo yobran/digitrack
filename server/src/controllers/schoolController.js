@@ -1,4 +1,4 @@
-const { PrismaClient } = require('../prisma/client');
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // Get all schools assigned to the current user
@@ -36,7 +36,7 @@ exports.getSchool = async (req, res) => {
 
     // Verify user has access to this school
     const assignment = await prisma.schoolAssignment.findFirst({
-      where: { userId, schoolId: parseInt(id) }
+      where: { userId, schoolId: id }
     });
 
     if (!assignment) {
@@ -44,13 +44,12 @@ exports.getSchool = async (req, res) => {
     }
 
     const school = await prisma.school.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: id },
       include: {
         devices: true,
         visits: {
           include: {
-            user: { select: { name: true } },
-            visitPhotos: true
+            user: { select: { name: true } }
           },
           orderBy: { visitDate: 'desc' }
         }

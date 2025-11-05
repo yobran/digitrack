@@ -21,28 +21,45 @@ export const authAPI = {
   register: (userData) => api.post('/auth/register', userData),
 };
 
-export const documentAPI = {
-  upload: (formData) => api.post('/documents/upload', formData),
-  list: () => api.get('/documents'),
-  download: (id) => api.get(`/documents/download/${id}`),
-};
-
 export const schoolAPI = {
   getMySchools: () => api.get('/schools/my-schools'),
   getSchool: (id) => api.get(`/schools/${id}`),
+  createSchool: (schoolData) => api.post('/schools', schoolData),
+};
+
+export const deviceAPI = {
+  addDevice: (deviceData) => api.post('/devices', deviceData),
+  updateDeviceStatus: (deviceId, status) => api.patch(`/devices/${deviceId}/status`, { status }),
+  getSchoolDevices: (schoolId) => api.get(`/devices/school/${schoolId}`),
+  getAllDevices: () => api.get('/devices'),
 };
 
 export const visitAPI = {
-  logVisit: (visitData) => api.post('/visits/log', visitData),
+  logVisit: (visitData) => api.post('/visits', visitData),
   getSchoolVisits: (schoolId) => api.get(`/visits/school/${schoolId}`),
+  getMyVisits: () => api.get('/visits/my-visits'),
 };
-export const deviceAPI = {
-  addDevice: (deviceData) => api.post('/devices/add', deviceData),
-  updateDeviceStatus: (deviceId, status) => api.patch(`/devices/${deviceId}/status`, { status }),
-  getSchoolDevices: (schoolId) => api.get(`/devices/school/${schoolId}`),
-};
+
 export const reportAPI = {
   generate: (data) => api.post('/reports/generate', data),
+};
+
+// Dashboard stats API
+export const statsAPI = {
+  getDashboardStats: () => api.get('/dashboard/stats'),
+};
+
+export const adminAPI = {
+  getAllSchools: () => api.get('/admin/schools'),
+  createSchool: (schoolData) => api.post('/admin/schools', schoolData),
+  getUsers: () => api.get('/admin/users'),
+  createUser: (userData) => api.post('/admin/users', userData), // ADDED
+  addDevice: (deviceData) => api.post('/admin/devices', deviceData), // ADDED
+};
+
+export const countyAPI = {
+  getCounties: () => api.get('/counties'),
+  getSubCounties: (countyId) => api.get(`/counties/${countyId}/subcounties`) // ADDED
 };
 
 export default api;

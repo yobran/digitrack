@@ -1,7 +1,5 @@
-// server/prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/prisma"
 }
 
 datasource db {
@@ -10,81 +8,252 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   name      String
   email     String   @unique
   password  String
-  role      String   @default("intern") // intern, supervisor
-  createdAt DateTime @default(now())
+  role      UserRole @default(intern)
+  phone     String?
+  countyId  String?
+  county    County?  @relation(fields: [countyId], references: [id])
   
-  // Relations
+  // Relationships
   assignedSchools SchoolAssignment[]
   visits          Visit[]
-  devices         Device[]
+  reportedIssues  Issue[] @relation("ReportedIssues")
+  assignedIssues  Issue[] @relation("AssignedIssues")
+  comments        Comment[]
+  schools         School[] // ADD THIS LINE
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model County {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  code        String      @unique
+  subCounties SubCounty[]
+  schools     School[]
+  users       User[]
+  
+  createdAt DateTime @default(now())
+}
+
+model SubCounty {
+  id       String   @id @default(cuid())
+  name     String
+  code     String
+  countyId String
+  county   County  @relation(fields: [countyId], references: [id])
+  schools  School[]
+  
+  createdAt DateTime @default(now())
 }
 
 model School {
-  id          Int      @id @default(autoincrement())
-  name        String
-  code        String   @unique // School code like "SCH001"
-  location    String
-  county      String
-  principal   String?
-  phone       String?
-  createdAt   DateTime @default(now())
+  id               String   @id @default(cuid())
+  name             String
+  code             String   @unique
+  location         String
+  latitude         Float?
+  longitude        Float?
+  headteacherName  String
+  headteacherPhone String
+  hasElectricity   Boolean  @default(false)
+  hasInternet      Boolean  @default(false)
+  totalStudents    Int      @default(0)
   
-  // Relations
+  // Relationships
+  subCountyId String
+  subCounty   SubCounty @relation(fields: [subCountyId], references: [id])
+  countyId    String?
+  county      County?   @relation(fields: [countyId], references: [id])
+  userId      String?   // assigned intern
+  user        User?     @relation(fields: [userId], references: [id])
+  
   assignments SchoolAssignment[]
   devices     Device[]
   visits      Visit[]
+  teachers    Teacher[]
+  issues      Issue[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model SchoolAssignment {
-  id       Int    @id @default(autoincrement())
-  userId   Int
-  schoolId Int
-  user     User   @relation(fields: [userId], references: [id])
-  school   School @relation(fields: [schoolId], references: [id])
+  id       String @id @default(cuid())
+  userId   String
+  schoolId String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
   
   @@unique([userId, schoolId])
 }
 
 model Device {
-  id          Int      @id @default(autoincrement())
-  schoolId    Int
-  addedById   Int
-  deviceType  String   // "Laptop", "Tablet", "Projector"
-  serialNumber String  @unique
-  status      String   @default("working") // working, broken, stolen
-  notes       String?
-  photo       String?  // URL to uploaded photo
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  schoolId     String
+  deviceType   DeviceType
+  serialNumber String
+  brand        String?
+  model        String?
+  status       DeviceStatus @default(working)
+  conditionNotes String?
+  purchaseDate DateTime?
   
-  school      School   @relation(fields: [schoolId], references: [id])
-  addedBy     User     @relation(fields: [addedById], references: [id])
+  // Relationships
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  history  DeviceHistory[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DeviceHistory {
+  id          String   @id @default(cuid())
+  deviceId    String
+  device      Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  status      DeviceStatus
+  notes       String?
+  recordedBy  String? // User ID
+  recordedAt  DateTime @default(now())
 }
 
 model Visit {
-  id             Int      @id @default(autoincrement())
-  userId         Int
-  schoolId       Int
-  visitDate      DateTime @default(now())
-  gpsLatitude    Float?
-  gpsLongitude   Float?
-  notes          String?
-  photo          String?  // Single main photo URL
-  createdAt      DateTime @default(now())
+  id            String   @id @default(cuid())
+  userId        String
+  schoolId      String
+  visitDate     DateTime @default(now())
+  devicesChecked Int?
+  issuesFound   String?
+  actionsTaken  String?
+  photos        String? // JSON string of photo URLs
+  gpsLatitude   Float?
+  gpsLongitude  Float?
+  durationMinutes Int?
   
-  user           User     @relation(fields: [userId], references: [id])
-  school         School   @relation(fields: [schoolId], references: [id])
-  visitPhotos    VisitPhoto[]  // ADDED THIS RELATION
+  // Relationships
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
 }
 
-model VisitPhoto {
-  id        Int      @id @default(autoincrement())
-  visitId   Int
-  photoUrl  String
-  createdAt DateTime @default(now())
+model Teacher {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  schoolId  String
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   
-  visit     Visit    @relation(fields: [visitId], references: [id])
+  trainingRecords TeacherTraining[]
+  
+  createdAt DateTime @default(now())
+}
+
+model TeacherTraining {
+  id          String   @id @default(cuid())
+  teacherId   String
+  teacher     Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  module      TrainingModule
+  skillLevel  SkillLevel @default(beginner)
+  completedAt DateTime?
+  notes       String?
+  
+  createdAt DateTime @default(now())
+}
+
+model Issue {
+  id          String      @id @default(cuid())
+  title       String
+  description String
+  category    IssueCategory
+  priority    Priority    @default(medium)
+  status      IssueStatus @default(open)
+  schoolId    String
+  school      School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  reportedById String?
+  reportedBy  User?      @relation("ReportedIssues", fields: [reportedById], references: [id])
+  assignedToId String?
+  assignedTo  User?      @relation("AssignedIssues", fields: [assignedToId], references: [id])
+  
+  comments    Comment[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Comment {
+  id      String   @id @default(cuid())
+  issueId String
+  issue   Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content String
+  createdAt DateTime @default(now())
+}
+
+// Enums
+enum UserRole {
+  intern
+  county_admin
+  national_admin
+}
+
+enum DeviceType {
+  tablet
+  laptop
+  projector
+  router
+  printer
+  other
+}
+
+enum DeviceStatus {
+  working
+  needs_repair
+  stolen
+  under_maintenance
+  decommissioned
+}
+
+enum TrainingModule {
+  basic_computer_skills
+  device_startup_charging
+  accessing_cbc_content
+  troubleshooting
+  classroom_management
+}
+
+enum SkillLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum IssueCategory {
+  device_broken
+  power_connectivity
+  training_assistance
+  content_missing
+  other
+}
+
+enum Priority {
+  low
+  medium
+  high
+  critical
+}
+
+enum IssueStatus {
+  open
+  in_progress
+  resolved
+  closed
 }

@@ -6,6 +6,8 @@ const authRoutes = require('./routes/authRoutes'); // ✅ Import auth routes
 const schoolRoutes = require('./routes/schoolRoutes'); // ✅ Import school routes
 const visitRoutes = require('./routes/visitRoutes'); // ✅ Import visit routes
 const deviceRoutes = require('./routes/deviceRoutes');
+const reportRoutes = require('./routes/reportRoutes'); // ✅ this must exist
+
 const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -16,6 +18,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/api/reports', reportRoutes);
 
 // ===== Routes =====
 

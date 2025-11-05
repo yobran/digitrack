@@ -41,5 +41,8 @@ export const deviceAPI = {
   updateDeviceStatus: (deviceId, status) => api.patch(`/devices/${deviceId}/status`, { status }),
   getSchoolDevices: (schoolId) => api.get(`/devices/school/${schoolId}`),
 };
+export const reportAPI = {
+  generate: (data) => api.post('/reports/generate', data),
+};
 
 export default api;

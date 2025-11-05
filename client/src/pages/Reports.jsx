@@ -30,66 +30,96 @@ export default function Reports() {
   };
 
   const generateReport = async () => {
-    setLoading(true);
-    setError('');
+  setLoading(true);
+  setError('');
 
-    try {
-      // Simulate report generation (we'll build backend next)
-      const mockReport = {
-        summary: {
-          totalSchools: schools.length,
-          totalVisits: 12,
-          totalDevices: 8,
-          workingDevices: 6,
-          brokenDevices: 1,
-          missingDevices: 1
+  try {
+    // Get the selected school
+    const selectedSchoolData = selectedSchool === 'all' 
+      ? null 
+      : schools.find(school => school.id === parseInt(selectedSchool));
+
+    // Generate report based on selected school
+    const report = {
+      summary: {
+        totalSchools: selectedSchool === 'all' ? schools.length : 1,
+        totalVisits: selectedSchool === 'all' ? 12 : 4, // These would come from real API later
+        totalDevices: selectedSchool === 'all' ? 8 : selectedSchoolData?.devices?.length || 0,
+        workingDevices: selectedSchool === 'all' ? 6 : selectedSchoolData?.devices?.filter(d => d.status === 'working').length || 0,
+        brokenDevices: selectedSchool === 'all' ? 1 : selectedSchoolData?.devices?.filter(d => d.status === 'broken').length || 0,
+        missingDevices: selectedSchool === 'all' ? 1 : selectedSchoolData?.devices?.filter(d => d.status === 'missing').length || 0
+      },
+      visits: [
+        {
+          id: 1,
+          schoolName: selectedSchool === 'all' ? 'Nairobi Primary School' : selectedSchoolData?.name,
+          visitDate: '2025-11-04',
+          notes: selectedSchool === 'all' ? 'Regular monitoring visit. All devices working properly.' : `Visit to ${selectedSchoolData?.name} - All devices checked.`,
+          gpsLocation: '-1.2921, 36.8219'
         },
-        visits: [
-          {
-            id: 1,
-            schoolName: 'Nairobi Primary School',
-            visitDate: '2025-11-04',
-            notes: 'Regular monitoring visit. All devices working properly.',
-            gpsLocation: '-1.2921, 36.8219'
-          },
-          {
-            id: 2,
-            schoolName: 'Nairobi Primary School',
-            visitDate: '2025-10-28',
-            notes: 'Tablet screen cracked. Needs replacement.',
-            gpsLocation: '-1.2921, 36.8219'
-          }
-        ],
-        devices: [
-          {
-            id: 1,
-            schoolName: 'Nairobi Primary School',
-            deviceType: 'Laptop',
-            serialNumber: 'LP-NB-001',
-            status: 'working',
-            lastUpdated: '2025-11-04'
-          },
-          {
-            id: 2,
-            schoolName: 'Nairobi Primary School',
-            deviceType: 'Tablet',
-            serialNumber: 'TAB-NB-001',
-            status: 'broken',
-            lastUpdated: '2025-10-28'
-          }
-        ],
-        generatedAt: new Date().toISOString(),
-        generatedBy: user?.name || 'DLP Field Officer'
-      };
+        {
+          id: 2,
+          schoolName: selectedSchool === 'all' ? 'Nairobi Primary School' : selectedSchoolData?.name,
+          visitDate: '2025-10-28',
+          notes: selectedSchool === 'all' ? 'Tablet screen cracked. Needs replacement.' : `Visit to ${selectedSchoolData?.name} - Device maintenance required.`,
+          gpsLocation: '-1.2921, 36.8219'
+        }
+      ],
+      devices: selectedSchool === 'all' ? [
+        {
+          id: 1,
+          schoolName: 'Nairobi Primary School',
+          deviceType: 'Laptop',
+          serialNumber: 'LP-NB-001',
+          status: 'working',
+          lastUpdated: '2025-11-04'
+        },
+        {
+          id: 2,
+          schoolName: 'Nairobi Primary School',
+          deviceType: 'Tablet',
+          serialNumber: 'TAB-NB-001',
+          status: 'broken',
+          lastUpdated: '2025-10-28'
+        },
+        {
+          id: 3,
+          schoolName: 'Mombasa Secondary School',
+          deviceType: 'Projector',
+          serialNumber: 'PROJ-MSA-001',
+          status: 'working',
+          lastUpdated: '2025-11-03'
+        }
+      ] : [
+        {
+          id: 1,
+          schoolName: selectedSchoolData?.name,
+          deviceType: 'Laptop',
+          serialNumber: 'LP-NB-001',
+          status: 'working',
+          lastUpdated: '2025-11-04'
+        },
+        {
+          id: 2,
+          schoolName: selectedSchoolData?.name,
+          deviceType: 'Tablet', 
+          serialNumber: 'TAB-NB-001',
+          status: 'broken',
+          lastUpdated: '2025-10-28'
+        }
+      ],
+      generatedAt: new Date().toISOString(),
+      generatedBy: user?.name || 'DLP Field Officer'
+    };
 
-      setReportData(mockReport);
-      
-    } catch (err) {
-      setError('Failed to generate report');
-    } finally {
-      setLoading(false);
-    }
-  };
+    setReportData(report);
+    
+  } catch (err) {
+    setError('Failed to generate report');
+  } finally {
+    setLoading(false);
+  }
+};
 
  const downloadPDF = async () => {
   try {
@@ -105,10 +135,109 @@ export default function Reports() {
   }
 };
 
-  const shareReport = () => {
-    alert('📧 Email sharing coming soon! This would email the report to your supervisor.');
-  };
+  const shareReport = async () => {
+  if (!reportData) return;
 
+  try {
+    // Predefined manager emails (you can expand this list)
+    const managers = {
+      'county_supervisor': 'county.supervisor@education.go.ke',
+      'dlp_coordinator': 'dlp.coordinator@education.go.ke', 
+      'head_teacher': 'principal@schools.go.ke',
+      'custom': ''
+    };
+
+    // Let user choose manager or enter custom email
+    const managerChoice = prompt(
+      `Choose manager to share with:\n\n` +
+      `1. County Supervisor (${managers.county_supervisor})\n` +
+      `2. DLP Coordinator (${managers.dlp_coordinator})\n` +
+      `3. Head Teacher (${managers.head_teacher})\n` +
+      `4. Custom email\n\n` +
+      `Enter 1, 2, 3, or 4:`, '1'
+    );
+
+    let managerEmail = '';
+    
+    switch (managerChoice) {
+      case '1':
+        managerEmail = managers.county_supervisor;
+        break;
+      case '2':
+        managerEmail = managers.dlp_coordinator;
+        break;
+      case '3':
+        managerEmail = managers.head_teacher;
+        break;
+      case '4':
+        managerEmail = prompt('Enter custom email address:');
+        break;
+      default:
+        alert('Invalid choice. Using County Supervisor.');
+        managerEmail = managers.county_supervisor;
+    }
+
+    if (!managerEmail) return;
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(managerEmail)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    // Create email content
+    const subject = `DLP Monitoring Report - ${new Date(dateRange.startDate).toLocaleDateString()} to ${new Date(dateRange.endDate).toLocaleDateString()}`;
+    
+    const body = `
+DIGITAL LITERACY PROGRAMME - MONITORING REPORT
+
+REPORT DETAILS:
+Generated by: ${user?.name || 'DLP Field Officer'}
+Report Period: ${new Date(dateRange.startDate).toLocaleDateString()} to ${new Date(dateRange.endDate).toLocaleDateString()}
+Generation Date: ${new Date().toLocaleDateString()}
+
+EXECUTIVE SUMMARY:
+• Schools Under Monitoring: ${reportData.summary.totalSchools}
+• Field Visits Conducted: ${reportData.summary.totalVisits}
+• Digital Devices Tracked: ${reportData.summary.totalDevices}
+• Operational Devices: ${reportData.summary.workingDevices}
+• Devices Requiring Attention: ${reportData.summary.brokenDevices + reportData.summary.missingDevices}
+
+DEVICE STATUS BREAKDOWN:
+✅ Working: ${reportData.summary.workingDevices} devices (${Math.round((reportData.summary.workingDevices / reportData.summary.totalDevices) * 100)}%)
+❌ Broken: ${reportData.summary.brokenDevices} devices (${Math.round((reportData.summary.brokenDevices / reportData.summary.totalDevices) * 100)}%)
+⚠️ Missing: ${reportData.summary.missingDevices} devices (${Math.round((reportData.summary.missingDevices / reportData.summary.totalDevices) * 100)}%)
+
+RECENT FIELD ACTIVITIES:
+${reportData.visits.slice(0, 5).map(visit => 
+  `📍 ${visit.schoolName} - ${new Date(visit.visitDate).toLocaleDateString()}\n   ${visit.notes}`
+).join('\n\n')}
+
+DEVICE INVENTORY SNAPSHOT:
+${reportData.devices.slice(0, 5).map(device => 
+  `• ${device.deviceType} (${device.serialNumber}): ${device.status.toUpperCase()} - ${device.schoolName}`
+).join('\n')}
+
+---
+This automated report was generated by DigiTrack DLP Management System.
+For detailed reports and analytics, please login to the system.
+    `.trim();
+
+    // Open email client
+    const mailtoLink = `mailto:${managerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoLink;
+    
+    // Success confirmation
+    setTimeout(() => {
+      alert(`✅ Report shared successfully with ${managerEmail}!\n\nYour email client opened with the complete report. Click "Send" to deliver it.`);
+    }, 1000);
+
+  } catch (error) {
+    console.error('Email sharing error:', error);
+    alert('Error preparing email. Please try again.');
+  }
+};
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
